@@ -1,65 +1,133 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import AnimatedBackground from "@/components/AnimatedBackground";
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import NewsCard from "@/components/NewsCard";
+
+interface Article {
+  title: string;
+  summary: string;
+  link: string;
+  source: string;
+  date: string;
+  category: string;
+}
+
+// Fallback mock data shown before n8n sends anything
+const MOCK_NEWS: Article[] = [
+  {
+    title: "Anthropic's Glasswing Highlights AI's Security Paradox",
+    summary: "Anthropic launched Glasswing, a new initiative leveraging AI to identify security vulnerabilities.",
+    link: "https://aibusiness.com",
+    source: "aibusiness.com",
+    date: "Apr 10",
+    category: "Security",
+  },
+  {
+    title: "Intel Secures New AI Infrastructure Deal With Google",
+    summary: "Intel announced a new AI infrastructure agreement with Google, joining a growing wave of major tech partnerships.",
+    link: "https://aibusiness.com",
+    source: "aibusiness.com",
+    date: "Apr 10",
+    category: "Infrastructure",
+  },
+];
 
 export default function Home() {
+  const [articles, setArticles] = useState<Article[]>(MOCK_NEWS);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    async function fetchNews() {
+      try {
+        const res = await fetch("/api/news");
+        const data = await res.json();
+
+        if (data.articles && data.articles.length > 0) {
+          setArticles(data.articles);
+          setUpdatedAt(data.updatedAt);
+          setIsLive(true);
+        }
+      } catch (err) {
+        console.log("Using mock data");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchNews();
+
+    // Auto-refresh every 5 minutes
+    const interval = setInterval(fetchNews, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="relative min-h-screen bg-dark-900 noise">
+      <AnimatedBackground />
+
+      <div className="relative z-10">
+        <Navbar isLive={isLive} updatedAt={updatedAt} />
+        <Hero articleCount={articles.length} />
+
+        <section className="max-w-6xl mx-auto px-6 pb-20">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="flex items-center gap-3 mb-8"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <span className="font-mono text-xs text-white/25 uppercase tracking-widest">
+              {isLive ? "Live Summaries" : "Sample Summaries"}
+            </span>
+            {!isLive && (
+              <span className="font-mono text-xs text-neon-pink/50 border border-neon-pink/20 px-2 py-0.5 rounded-full">
+                waiting for n8n
+              </span>
+            )}
+            <div className="flex-1 h-[1px] bg-gradient-to-r from-white/10 to-transparent" />
+          </motion.div>
+
+          {loading ? (
+            // Loading skeleton
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="glass rounded-2xl p-6 animate-pulse">
+                  <div className="h-3 bg-white/5 rounded mb-4 w-1/3" />
+                  <div className="h-5 bg-white/5 rounded mb-3" />
+                  <div className="h-3 bg-white/5 rounded mb-2" />
+                  <div className="h-3 bg-white/5 rounded w-2/3" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <AnimatePresence>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {articles.map((article, i) => (
+                  <NewsCard key={i} {...article} index={i} />
+                ))}
+              </div>
+            </AnimatePresence>
+          )}
+        </section>
+
+        <motion.footer
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="text-center pb-10 font-mono text-xs text-white/15"
+        >
+          built with n8n + gemini + next.js ✦{" "}
+          {updatedAt
+            ? `last updated ${new Date(updatedAt).toLocaleTimeString()}`
+            : "auto-updated daily"}
+        </motion.footer>
+      </div>
+    </main>
   );
 }
