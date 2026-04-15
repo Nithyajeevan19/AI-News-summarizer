@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-
-export default function Hero() {
+type HeroProps = {
+  articleCount: number;
+};
+export default function Hero({ articleCount }: HeroProps) {
   return (
     <div className="relative pt-40 pb-16 px-8 text-center">
       {/* Overline */}
