@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
       articles,
     };
 
-    writeFileSync(DATA_FILE, JSON.stringify(payload, null, 2));
     console.log("✅ News updated from n8n:", articles.length, "articles");
 
     return NextResponse.json({ success: true, count: articles.length });
