@@ -45,7 +45,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchNews() {
       try {
-        const res = await fetch("/api/news");
+        const res = await fetch("/api/articles");
         const data = await res.json();
 
         if (data.articles && data.articles.length > 0) {
